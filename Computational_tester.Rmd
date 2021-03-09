@@ -36,9 +36,11 @@ ggplot()+
 
 The posterior distribution is given by
 
+
 $$
 \begin{aligned}
 f(\theta|x)&=f(x|t_1, \lambda_0, \lambda_1,\beta)f(t_1)f(\lambda_0|\beta)f(\lambda_1|\beta)f(\beta)\\
 &=exp(-\lambda_0)
 \end{aligned}
 $$
+
