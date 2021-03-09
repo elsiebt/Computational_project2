@@ -8,6 +8,30 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-
+library(boot)
+library(ggplot2)
 ```
 
+# Problem A
+
+## 1.
+
+Getting a impression of the dataset by making a plot of the cummulative number of disasters as a function of each year.
+```{r}
+#The x-axis contains the spesific time of an accident
+x <- coal$date
+
+#y is the cummulative sum of disasters
+y <- rep(1,length(x))
+y[1]<-0
+y <- cumsum(y)
+y[length(x)]<-0
+
+#Plotting
+ggplot()+
+  geom_line(aes(x=x[1:190],y=y[1:190]))
+
+```
+## 2.
+
+The posterior distribution is 
