@@ -44,3 +44,4 @@ f(\theta|x)&=f(x|t_1, \lambda_0, \lambda_1,\beta)f(t_1)f(\lambda_0|\beta)f(\lamb
 \end{aligned}
 $$
 
+Majas endring 
