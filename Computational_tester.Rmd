@@ -40,8 +40,18 @@ The posterior distribution is given by
 $$
 \begin{aligned}
 f(\theta|x)&=f(x|t_1, \lambda_0, \lambda_1,\beta)f(t_1)f(\lambda_0|\beta)f(\lambda_1|\beta)f(\beta)\\
-&=exp(-\lambda_0)
+&=\exp(-\lambda_0)
 \end{aligned}
 $$
 
-Majas endring
+The full conditionals are
+$$
+\begin{align}
+f(t_1|...) &\propto \exp\{-t_1(\lambda_0-\lambda_1)\} \\
+f(\lambda_0|...) &\propto \lambda_0^{y_0+1} \exp\{-\lambda_0(\frac{1}{\beta} +t_1-t_0)\} \\
+f(\lambda_1|...) &\propto \lambda_1^{y_1+1} \exp\{-\lambda_1(\frac{1}{\beta} +t_2-t_1)\} \\
+f(\beta|...) &\propto \frac{1}{\beta^5}\exp\{\frac{1}{\beta}(1+\lambda_0+\lambda_1)\}
+\end{align}
+$$
+
+From this we can see that $f(t_1|...) = \text{Exp}(\theta)$ when $\theta^{-1}=\lambda_0-\lambda_1$. Next $f(\lambda_0|...)=\text{Gamma}(\alpha_0,\beta_0)$ when $\alpha_0=y_0+2$ and $\beta_0^{-1}=1/\beta + t_1 - t_0$, and $f(\lambda_1|...)=\text{Gamma}(\alpha_1,\beta_1)$ when $\alpha_1=y_1+2$ and $\beta_1^{-1}=1/\beta + t_2 - t_1$. The full conditional for $\beta$ har no known distribution. 
