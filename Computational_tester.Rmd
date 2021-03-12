@@ -59,3 +59,27 @@ f(\beta|...) &\propto \frac{1}{\beta^5}\exp\{\frac{1}{\beta}(1+\lambda_0+\lambda
 $$
 
 From this we can see that $f(t_1|...) = \text{Exp}(\theta)$ when $\theta^{-1}=\lambda_0-\lambda_1$. Next $f(\lambda_0|...)=\text{Gamma}(\alpha_0,\beta_0)$ when $\alpha_0=y_0+2$ and $\beta_0^{-1}=1/\beta + t_1 - t_0$, and $f(\lambda_1|...)=\text{Gamma}(\alpha_1,\beta_1)$ when $\alpha_1=y_1+2$ and $\beta_1^{-1}=1/\beta + t_2 - t_1$. The full conditional for $\beta$ har no known distribution. 
+
+
+```{r}
+find_y0_y1 = function(t0, t1, t2) {
+  if (df$dates[190] < t1) { # If t1 is after the last disaster 
+    y0 = 189        
+  } else { # Find out how many disasters happended before t1
+    y0 = 0
+    i = 2
+    done = FALSE
+    while (done == F) {
+      if (df$dates[i] < t1) {
+        i = i+1
+      } else {
+        done = TRUE
+        i = i-1
+      }
+    }
+    y0 = df$cumulative[i]
+  }
+  y1 = 189 - y0 # How many disasters happened after t1
+  return( c(y0,y1) )
+}
+```
