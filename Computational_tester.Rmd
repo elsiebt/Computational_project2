@@ -199,24 +199,24 @@ n = length(t(simulation[1]))
 # Trace plot of t1
 ggplot() +
   geom_line( aes(x = 1:n, y = t(simulation[1])) ) +
-  xlab('Iteration') + ylab('t1') + 
+  xlab('Iterations') + ylab(expression(t[1])) + 
   ggtitle(expression(paste('Trace plot of ', t[1]))) 
 
 # Trace plot of lambda0
 ggplot()+
   geom_line( aes(x = 1:n, y = t(simulation[2])) ) +
-  xlab('Iteration') + ylab(expression(lambda[0])) + 
+  xlab('Iterations') + ylab(expression(lambda[0])) + 
   ggtitle(expression(paste('Trace plot of ', lambda[0])))
 
 # Trace plot of lambda1
 ggplot()+
   geom_line( aes(x = 1:n, y = t(simulation[3])) ) +
-  xlab('Iteration') + ylab(expression(lambda[1])) + 
+  xlab('Iterations') + ylab(expression(lambda[1])) + 
   ggtitle(expression(paste('Trace plot of ', lambda[1])))
 
 # Trace plot of beta
 ggplot()+
   geom_line( aes(x = 1:n, y = t(simulation[4])) ) +
-  xlab('Iteration') + ylab(expression(beta)) + 
+  xlab('Iterations') + ylab(expression(beta)) + 
   ggtitle(expression(paste('Trace plot of ', beta))) 
 ```
