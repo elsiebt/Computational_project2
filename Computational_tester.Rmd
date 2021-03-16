@@ -196,6 +196,7 @@ simulation = MCMC(theta0,2000)
 
 ``` {r A5}
 n = length(t(simulation[1]))
+
 # Trace plot of t1
 ggplot() +
   geom_line( aes(x = 1:n, y = t(simulation[1])) ) +
@@ -218,5 +219,13 @@ ggplot()+
 ggplot()+
   geom_line( aes(x = 1:n, y = t(simulation[4])) ) +
   xlab('Iterations') + ylab(expression(beta)) + 
-  ggtitle(expression(paste('Trace plot of ', beta))) 
+  ggtitle(expression(paste('Trace plot of ', beta)))
+```
+
+```{r}
+par(mfrow = c(2,2))
+acf(simulation[1])
+acf(simulation[2])
+acf(simulation[3])
+acf(simulation[4])
 ```
