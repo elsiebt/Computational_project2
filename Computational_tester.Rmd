@@ -1,3 +1,13 @@
+---
+title: "TMA4300 Computer Intensive Statistical Methods"
+subtitle: "Exercise 2"
+author: "Maja B. Mathiassen & Elsie B. Tandberg"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+    - \usepackage{bm}
+output: pdf_document
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -508,4 +518,15 @@ $$
 
 which is a Gamma distribution with $\alpha=T/2$ and $\beta^{-1}=1+1/2(\bm{\eta}^TLL^T\bm{\eta})$.
 
-
+```{r}
+A_matrix = function(d) {
+  n = d-2
+  I = diag(n)
+  L1 = cbind( cbind(I, integer(n)), integer(n))
+  L2 = -2 * cbind( cbind(integer(n), I), integer(n))
+  L3 = cbind( cbind(integer(n), integer(n)), I)
+  L = L1 + L2 + L3
+  A = t(L) %*% L
+  return(A)
+}
+```
