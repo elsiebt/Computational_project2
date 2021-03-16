@@ -17,6 +17,8 @@ library(boot)
 library(ggplot2)
 library(invgamma)
 library(gridExtra)
+library(MASS)
+library(MCMCglmm)
 ```
 
 # Problem A: The coal mining disaster data
@@ -41,6 +43,7 @@ ggplot()+
   xlab('Time') + ylab('Cumulative number of disasters') + 
   ggtitle('Mining disasters') 
 ```
+
 From the figure above we can see that the time between each disaster increases with time. Up until the year 1900 the cumulative number of disasters follow a linear curve, but as we reach 1900 the plot flattens indicating that there is a longer time interval between each diaster. 
 
 ## A2
@@ -298,7 +301,7 @@ $$
 
 ```{r}
 #Making MCMC with block
-theta0 <- c(1900, 1, 1, 3)
+#theta0 <- c(1900, 1, 1, 3)
 t0 <- 1851
 t2 <- 1962
 
@@ -321,9 +324,12 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       }
       else{
         #Finding the acceptance probability
-        firstpart <-exp((y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-((y0.prop+2)*log(t1.prop-t0+1/beta)+(y1.prop+2)*log(t2-t1.prop+1/beta)))
-        secondpart <- (gamma(y0.prop+2)*gamma(y1.prop+2))/(gamma(y0+2)*gamma(y1+2))
-        accept.prob <- min(1, firstpart*secondpart)
+        firstpart <-(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-(y0.prop+2)*log(t1.prop-t0+1/beta)-(y1.prop+2)*log(t2-t1.prop+1/beta)
+        secondpart <-log((gamma(y0.prop+2)*gamma(y1.prop+2)))-log((gamma(y0+2)*gamma(y1+2)))
+        sec <- sum(log(1:y0.prop+1))+sum(log(1:y1.prop+1))-sum(log(1:y0+1))-sum(log(1:y1+1))
+        
+      
+        accept.prob <- min(1, exp(firstpart+sec))
         
       }
       u <- runif(1)
@@ -342,7 +348,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       
       return(c(t1.update, lambda0.update, lambda1.update, beta))
 }
-
+theta0=c(1914.177,	9655.250,	1786.733,	1.963606)
 block1(theta0[1], theta0[2], theta0[3], theta0[4],20)
 
 ```
@@ -355,25 +361,28 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
 
       
       #Metropolis-Hastings for sampling from t1
-      beta.prop <-rnorm(1, beta, sigma.beta) #Generating proposal value for t1 from normal distribution
+      beta.prop <-rtnorm(1, beta, sigma.beta, lower=0) #Generating proposal value for t1 from normal distribution
       lambda0.prop <- rgamma(1, y0+2, 1/(t1-t0+1/beta.prop)) 
       lambda1.prop <- rgamma(1, y1+2, 1/(t2-t1+1/beta.prop))
       
       
       #Finding the acceptance probability
-      alpha2 <- 5*log(beta)+(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-5*log(beta.prop)-(y0+2)*log(t1-t0+1/beta.prop)-(y1+2)*log(t2-t1+1/beta.prop)
-      print(alpha2)-1/beta.prop+1/beta
-      accept.prob <- min(1, exp(alpha2))
-      print(accept.prob)
+      alpha2 <- 5*log(beta)+(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-5*log(beta.prop)-(y0+2)*log(t1-t0+1/beta.prop)-(y1+2)*log(t2-t1+1/beta.prop)-1/beta.prop+1/beta
+      
+      #print(alpha2)
+      accept.prob2 <- min(1, exp(alpha2))
+      #print(accept.prob)
       u <- runif(1)
-      if(u<accept.prob){
+      if(u<accept.prob2){
         #accept
+        t1<-t1
         lambda0<-lambda0.prop
         lambda1<-lambda1.prop
         beta <- beta.prop
       }
       else{
         #reject, keeping old values
+        t1<-t1
         lambda0<-lambda0
         lambda1<-lambda1
         beta<- beta
@@ -381,7 +390,7 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
       
       return(c(t1, lambda0, lambda1, beta))
 }
-#block2(theta0[1], theta0[2], theta0[3], theta0[4],10)
+block2(theta0[1], theta0[2], theta0[3], theta0[4],3)
 
 
 ```
@@ -399,12 +408,13 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
   beta <- rep(0,n)
   beta[1]<-theta[4]
   
+  block1(t1[i-1], lambda0[i-1], lambda1[i-1], beta[i-1], sigma.t1)
+  
   #Generating n samples of the parameters
   for(i in 2:n){
-    print(i)
+    
     if(i%%2==0){
       run_block1 <- block1(t1[i-1], lambda0[i-1], lambda1[i-1], beta[i-1], sigma.t1)
-      print(run_block1)
       t1[i]<-run_block1[1]
       lambda0[i]<-run_block1[2]
       lambda1[i]<-run_block1[3]
@@ -412,7 +422,7 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
     }
     else{
       run_block2 <- block2(t1[i-1], lambda0[i-1], lambda1[i-1], beta[i-1], sigma.beta)
-      t1[i]<-t[i-1]
+      t1[i]<-t1[i-1]
       lambda0[i]<-run_block2[2]
       lambda1[i]<-run_block2[3]
       beta[i]<-run_block2[4] 
@@ -424,9 +434,10 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
 }
 
 #block1(2, 2, 2, 2, 2)
-#block2(2, 2, 2, 2, 2)
+#block2(1860, 2, 2, 2, 2)
 
-#MCMC_block(theta0, 1000, 10,10)
+MCMC_block(theta0,2000, 10,2 )
+
 ```
 
 
@@ -518,4 +529,72 @@ $$
 
 which is a Gamma distribution with $\alpha=T/2$ and $\beta^{-1}=1+1/2(\bm{\eta}^TLL^T\bm{\eta})$.
 
+```{r}
+A_matrix = function(d) {
+  n = d-2
+  I = diag(n)
+  L1 = cbind( cbind(I, integer(n)), integer(n))
+  L2 = -2 * cbind( cbind(integer(n), I), integer(n))
+  L3 = cbind( cbind(integer(n), integer(n)), I)
+  L = L1 + L2 + L3
+  A = t(L) %*% L
+  return(A)
+}
+```
+
+
+```{r}
+#Making block Gibbs algorithm
+gibbs_block <- function(eta, n, iter){
+  theta <- rep(1,iter)
+  eta_mat <- matrix(data=NA, nrow = n, ncol=iter)
+  eta_mat[,1] <- eta
+  A <- A_matrix(n)
+  alpha <- n/2
+
+    for(i in 2:iter){
+    beta <- 1/(t(eta_mat[,i-1])%*%A%*%eta_mat[,i-1])
+
+    #Sampling theta from gamma distribution, gibbs step
+    theta[i] <- rgamma(1, alpha, beta)
+    b<- solve((theta[i]*A+diag(n)))
+    eta_mat[,i] <- mvrnorm(1,b%*%df$V1, b)
+    }
+ 
+  
+  return(rbind(theta, eta_mat))
+}
+
+n<-20
+iter=2000
+eta <- rep(3,n)
+eta[n/2]<-4
+samples<-gibbs_block(eta,n, 2000)
+
+truehist(samples[1,])
+```
+
+```{r}
+mean_values <- rep(0,n)
+var_values <- rep(0, n)
+upper <-rep(0,n)
+lower <-rep(0,n)
+x <-seq(1,n)
+for(i in 1:n){
+  mean_values[i]<-mean(samples[i+1,])
+  var_values[i]<-var(samples[i+1,])
+  upper[i]<-qnorm(1-0.025)*sqrt(var_values[i])+mean_values[i]
+  lower[i]<-qnorm(0.025)*sqrt(var_values[i])+mean_values[i]
+}
+ggplot()+
+  geom_line(aes(x=x, y=mean_values))+
+  geom_line(aes(x=x, y=upper,colour="Upper"), linetype =3)+
+  geom_line(aes(x=x, y=lower,colour="Lower"), linetype =3)+
+  geom_point(aes(x=x, y=df$V1))
+
+```
+## B3
+```{r}
+
+```
 
