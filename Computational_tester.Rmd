@@ -10,10 +10,11 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, include=FALSE}
 library(boot)
 library(ggplot2)
 library(invgamma)
+library(gridExtra)
 ```
 
 # Problem A: The coal mining disaster data
@@ -22,7 +23,7 @@ In this problem we look at a data set of mining disasters in the UK, from March 
 ## A1
 
 To get an impression of the data set, we make a plot of the cumulative number of disasters as a function of time. 
-```{r A1, fig.cap="Caption"}
+```{r A1, fig.cap="Caption",fig.width=6, fig.height=4}
 #The x-axis contains the specific time of an accident
 x <- coal$date
 
@@ -38,7 +39,7 @@ ggplot()+
   xlab('Time') + ylab('Cumulative number of disasters') + 
   ggtitle('Mining disasters') 
 ```
-From the figure above we can see that ..... etc. 
+From the figure above we can see that the time between each disaster increases with time. Up until the year 1900 the cumulative number of disasters follow a linear curve, but as we reach 1900 the plot flattens indicating that there is a longer time interval between each diaster. 
 
 ## A2
 
@@ -101,8 +102,6 @@ f(\lambda_1|...) &\propto \lambda_1^{y_1+1} \exp\{-\lambda_1(\frac{1}{\beta} +t_
 f(\beta|...) &\propto \frac{1}{\beta^5}\exp\{\frac{1}{\beta}(1+\lambda_0+\lambda_1)\}
 \end{aligned}
 $$
-
-
 From this we can see that $f(t_1|...)$ does not belong to a distribution. Next $f(\lambda_0|...)\sim\text{Gamma}(\alpha_0,\beta_0)$ when $\alpha_0=y_0+2$ and $\beta_0^{-1}=1/\beta + t_1 - t_0$, and $f(\lambda_1|...)\sim\text{Gamma}(\alpha_1,\beta_1)$ when $\alpha_1=y_1+2$ and $\beta_1^{-1}=1/\beta + t_2 - t_1$. Lastly $f(\beta|...)\sim \text{invGamma}(4, 1+\lambda_0 + \lambda_1)$.
 
 ## A4
@@ -110,47 +109,23 @@ From this we can see that $f(t_1|...)$ does not belong to a distribution. Next $
 We want to implement a single site MCMC algorithm for $f(\theta|x)$. Since $\lambda_0$, $\lambda_1$, and $\beta$ are from known distributions we can use Gibbs sampling for these variables. For $t_1$ we choose to use random walk, and 
 $$
 \begin{aligned}
-t_1^{i}\sim \mathcal{N}(t_1^{i-1}, \sigma^2),
+\tilde t_1\sim \mathcal{N}(t_1^{i-1}, \sigma^2),
 \end{aligned}
 $$
-where $t_1^{i-1}$ is the current value and $t_1^i$ is the proposed new value. The acceptance probability becomes
+where $t_1^{i-1}$ is the current value and $\tilde t_1$ is the proposed new value. $y_0$ and $y_1$ are also dependent on $t_1$, so the values dependent on the current value  $t_1^{i-1}$, $y_0$ and $y_1$, and the values dependent on the proposed value, $\tilde t_1$, $\tilde y_0$ and $\tilde y_1$, are included when finding the acceptance probability. The acceptance probability is found on log scale and the expression becomes
 $$
 \begin{aligned}
-\alpha = \min\bigg(1, \frac{f(t_1^i|...)}{f(t_1^{i-1}|...)}\bigg) = \min\Big(1, \exp\{(t_1^{i-1}-t_1^i)(\lambda_0-\lambda_1)\}\lambda_0\lambda_1\Big)
+\alpha = \min\bigg(1, \frac{f(\tilde t_1|...)}{f(t_1^{i-1}|...)}\bigg) = \min\Big(1, \exp((t_1-\tilde t_1)(\lambda_0-\lambda_1)+\log\lambda_0(\tilde y_0-y_0)+\log\lambda_1(\tilde y_1-y_1))\Big).
 \end{aligned}
 $$
-maybe... I am not entirely sure...
 
+The algortihm for the single site MCMC is now made.
 ```{r}
-find_y0_y1 = function(t0, t1, t2) {
-  if (coal$date[190] < t1) { # If t1 is after the last disaster 
-    y0 = 189        
-  } else { # Find out how many disasters happened before t1
-    y0 = 0
-    i = 2
-    done = FALSE
-    while (done == F) {
-      if (coal$date[i] < t1) {
-        i = i+1
-      } else {
-        done = TRUE
-        i = i-1
-      }
-    }
-    y0 = coal$cumulative[i]
-  }
-  y1 = 189 - y0 # How many disasters happened after t1
-  return( c(y0,y1) )
-}
-```
-
-
-```{r}
-#Trying to make the algorithm
-theta0 <- c(1900, 1, 1, 3)
-t0 <- 1851
-t2 <- 1962
+#Single site MCMC
 MCMC <- function(theta, n, sigma){
+  #Setting the initial values from the input
+  t0 <- 1851
+  t2 <- 1962
   t1 <- rep(0, n)
   t1[1]<-theta[1]
   lambda0 <- rep(0,n)
@@ -169,10 +144,10 @@ MCMC <- function(theta, n, sigma){
       
       
       #Metropolis-Hastings for sampling from t1
-      proposal <-rnorm(1, t1[i-1], sigma)
-      y0.prop <- sum(coal$date<proposal)-1
-      y1.prop <- 189-y0.prop
-      if(proposal<t0 || proposal>t2){
+      proposal <-rnorm(1, t1[i-1], sigma) #Proposal value for t1
+      y0.prop <- sum(coal$date<proposal)-1 #Corresponding proposal value for y0
+      y1.prop <- 189-y0.prop #Corresponding proposal value for y1
+      if(proposal<t0 || proposal>t2){ #Cheking if the proposed value lies within our predefined interval for t
         accept.prob=0
       }
       else{
@@ -184,9 +159,11 @@ MCMC <- function(theta, n, sigma){
       }
       u <- runif(1)
       if(u<accept.prob){
+        #Accept
         t1[i]<-proposal
       }
       else{
+        #Reject, keep the previous value
         t1[i]<-t1[i-1]
       }
       
@@ -194,92 +171,116 @@ MCMC <- function(theta, n, sigma){
   thetamat <- data.frame(t1,lambda0, lambda1, beta)
   return(thetamat)
 }
-
-simulation = MCMC(theta0,2000,3)
 ```
 
 ## A5
+We will now run our single site MCMC algorithm.
+```{r}
+#Defining initial values for the parameters
+theta0 <- c(1900, 1, 1, 3)
 
-``` {r A5}
-n = length(t(simulation[1]))
-# Trace plot of t1
-ggplot() +
-  geom_line( aes(x = 1:n, y = t(simulation[1])) ) +
-  xlab('Iterations') + ylab(expression(t[1])) + 
-  ggtitle(expression(paste('Trace plot of ', t[1]))) 
-
-# Trace plot of lambda0
-ggplot()+
-  geom_line( aes(x = 1:n, y = t(simulation[2])) ) +
-  xlab('Iterations') + ylab(expression(lambda[0])) + 
-  ggtitle(expression(paste('Trace plot of ', lambda[0])))
-
-# Trace plot of lambda1
-ggplot()+
-  geom_line( aes(x = 1:n, y = t(simulation[3])) ) +
-  xlab('Iterations') + ylab(expression(lambda[1])) + 
-  ggtitle(expression(paste('Trace plot of ', lambda[1])))
-
-# Trace plot of beta
-ggplot()+
-  geom_line( aes(x = 1:n, y = t(simulation[4])) ) +
-  xlab('Iterations') + ylab(expression(beta)) + 
-  ggtitle(expression(paste('Trace plot of ', beta))) 
-
+#Running the single site MCMC when the tuning parameter is 3
+simulation3 = MCMC(theta0,2000,3)
 ```
-From the trace plots it seems likely that the parameters have converged. The values have stabilized after 250 iterations so this is the burn-in period for all the four parameters. 
+
+To evaluate our algorithm we will consider the burn-in and mixing properties.
+First the burn-in periods are evaluated by making trace plots for each of the parameters. 
+``` {r A5, fig.cap="\\label{tracesigma3} Trace plots when the tuning parameter $\\sigma$=3."}
+#A function that makes the trace plots given a simulation
+trace <- function(simulation){
+  n = length(t(simulation[2]))
+  # Trace plot of t1
+  p1<-ggplot() +
+    geom_line( aes(x = 1:n, y = t(simulation[1])) ) +
+    xlab('Iterations') + ylab(expression(t[1])) + 
+    ggtitle(expression(paste('Trace plot of ', t[1]))) 
+      
+  # Trace plot of lambda0
+  p2<-ggplot()+
+    geom_line( aes(x = 1:n, y = t(simulation[2])) ) +
+    xlab('Iterations') + ylab(expression(lambda[0])) + 
+    ggtitle(expression(paste('Trace plot of ', lambda[0])))
+  
+  # Trace plot of lambda1
+  p3<-ggplot()+
+    geom_line( aes(x = 1:n, y = t(simulation[3])) ) +
+    xlab('Iterations') + ylab(expression(lambda[1])) + 
+    ggtitle(expression(paste('Trace plot of ', lambda[1])))
+  
+  # Trace plot of beta
+  p4<-ggplot()+
+    geom_line( aes(x = 1:n, y = t(simulation[4])) ) +
+    xlab('Iterations') + ylab(expression(beta)) + 
+    ggtitle(expression(paste('Trace plot of ', beta))) 
+  
+  grid.arrange(p1, p2, p3,p4,nrow = 2)
+}
+#Making the trace plots for our simulation
+trace(simulation3)
+```
+
+From the trace plots in Figure \ref{tracesigma3} it seems likely that the parameters have converged. The values have stabilized after 250 iterations so this is the burn-in period for all the four parameters. For $\t_1$ we see that the values do not reach the full length of the interval, $(1851, 1962)$, this is probably due to our choice of tuning parameter $sigma$ which is the standard deviation in the normal distribution $t_1$ is sampled from. It is expected to observe a wider range in values for $t_1$ for a higher value of the tuning parameter.
 
 The mixing properties are evaluated by looking at the autocorrelation plots. 
 
-```{r}
-par(mfrow = c(2, 2))
+```{r, fig.cap="\\label{autosigma3} Autocorrelation plots for $\\sigma$=3."}
+#Function making the autocorrelation plots
+autocorr<-function(simulation){
+  par(mfrow = c(2, 2))
 
-#Mixing properties
-acf(simulation[1])
-acf(simulation[2])
-acf(simulation[3])
-acf(simulation[4])
+  #Mixing properties
+  acf(simulation[1])
+  acf(simulation[2])
+  acf(simulation[3])
+  acf(simulation[4])
+}
+#Running the algortihm for the autocorrelation plots
+autocorr(simulation3)
 ```
-The autocorrelations plots for  $\t_1$, $\lambda_0$ and $\lambda_1$ are similar and so the mixing properties 
+
+The autocorrelations plots for  $t_1$, $\lambda_0$, $\lambda_1$ and $\beta$ in Figure \ref{autosigma3} show a decreased correlation for increased values of Lag which is good. We observe that $t_1$, $\lambda_0$ and $\lambda_1$ have some correlation for values values that lie close but for higher Lag this correlation is negligible. 
 
 ## 6
 Our algorithm has a tuning parameter $\sigma$ used to sample $t_1$ from the normal distribution. We will now explore how its value affect the burn-in and mixing properties. 
 
-```{r}
-burn.in <- function(sigma){
-  simulation = MCMC(theta0,2000,sigma)
 
-  n = length(t(simulation[2]))
-  #par(mfrow = c(2, 2))
-    # Trace plot of t1
-    ggplot() +
-      geom_line( aes(x = 1:n, y = t(simulation[1])) ) +
-      xlab('Iterations') + ylab(expression(t[1])) + 
-      ggtitle(expression(paste('Trace plot of ', t[1]))) 
-    
-    # Trace plot of lambda0
-    ggplot()+
-      geom_line( aes(x = 1:n, y = t(simulation[2])) ) +
-      xlab('Iterations') + ylab(expression(lambda[0])) + 
-      ggtitle(expression(paste('Trace plot of ', lambda[0])))
-    
-    # Trace plot of lambda1
-    ggplot()+
-      geom_line( aes(x = 1:n, y = t(simulation[3])) ) +
-      xlab('Iterations') + ylab(expression(lambda[1])) + 
-      ggtitle(expression(paste('Trace plot of ', lambda[1])))
-    
-    # Trace plot of beta
-    ggplot()+
-      geom_line( aes(x = 1:n, y = t(simulation[4])) ) +
-      xlab('Iterations') + ylab(expression(beta)) + 
-      ggtitle(expression(paste('Trace plot of ', beta))) 
-
-}
-
-burn.in(2)
+```{r, fig.cap="\\label{tracesigma2} Trace plots when the tuning parameter $\\sigma$=2.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 2
+simulation2<-MCMC(theta0,2000,2)
+#Makig the trace plots
+trace(simulation2)
 ```
 
+```{r, fig.cap="\\label{autosigma2} Autocorrelation plots for $\\sigma$=2.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(simulation2)
+```
+In Figure \ref{tracesigma2} we observe a more narrow range for values of $t_1$ which is expected because the tuning parameter is smaller than the one considered in A5. Apart from that the trace plots are similar to the ones from A5, all have converged and the burn-in period is still considered to be 250 iteration. From the autocorrelation plots from Figure \ref{autosigma2} we observe a slightly lower correlation for small Lag for $\lambda_0$ and $\lmabda_1$ compared to Firgure \ref{autosigma3.}. SI LITT MER OM MIXING!
+
+```{r, fig.cap="\\label{tracesigma6} Trace plots when the tuning parameter $\\sigma$=6.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 6
+simulation6<-MCMC(theta0,2000,6)
+trace(simulation6)
+```
+
+```{r, fig.cap="\\label{autosigma6} Autocorrelation plots for $\\sigma$=6.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(simulation6)
+```
+
+In Figure \ref{tracesigma6} and \ref{autosigma6} the tuning parameter is set to 6, we see that convergence is reached and the burn-in period is still 250 iterations. In addition we have a higher range of values for $t_1$ as expected for increased $sigma$. The mixing properties are slightly higher, we see more correlation for each value of Lag. 
+
+```{r, fig.cap="\\label{tracesigma20} Trace plots when the tuning parameter $\\sigma$=20.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 20
+simulation20<-MCMC(theta0,2000,20)
+trace(simulation20)
+```
+
+```{r, fig.cap="\\label{autosigma20} Autocorrelation plots for $\\sigma$=20.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(simulation20)
+```
+In Figure \ref{tracesigma20} and \ref{autosigma20} the tuning parameter is set to 20, we see that convergence is reached and the burn-in period is still 250 iterations. For all the parameters the trace plots show a wider range, and this time $t_1$ reaches the whole interval. The mixing properties are slightly higher, we see more correlation for each value of Lag. 
 
 ## 7
 We will now implement a block Metropolis Hastings algortihm using two block proposals. The first proposal for $(t_1, \lambda_0, \lambda_1)$ where $\beta$ is kept unchanged. Proposal values $(\tilde t_1, \tilde \lambda_0, \tilde \lambda_1)$ will be generated by first generating $(\tilde t_1$ from the normal distribution centered at the current value of $t_1$, which was done in A4. And then generating $\tilde \lambda_0, \tilde \lambda_1)$ with the new value of $(\tilde t_1$. The acceptance probability is now changed so that it is now dependent on all the three parameters. Resulting in the following acceptance probability on log scale.
@@ -319,11 +320,10 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       }
       else{
         #Finding the acceptance probability
-        numerator.log <- -lambda0.prop*(t1.prop-t0)-lambda1.prop*(t2-t1.prop)+(y0.prop+1)*log(lambda0.prop)+(y1.prop+1)*log(lambda1.prop)-1/beta*(lambda0.prop+lambda1.prop)
-        denominator.log <- -lambda0*(t1-t0)-lambda1*(t2-t1)+(y0+1)*log(lambda0)+(y1+1)*log(lambda1)-1/beta*(lambda0+lambda1)
-
-        accept.prob <- min(1, exp(numerator.log-denominator.log))
-        print(numerator.log-denominator.log)
+        firstpart <-exp((y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-((y0.prop+2)*log(t1.prop-t0+1/beta)+(y1.prop+2)*log(t2-t1.prop+1/beta)))
+        secondpart <- (gamma(y0.prop+2)*gamma(y1.prop+2))/(gamma(y0+2)*gamma(y1+2))
+        accept.prob <- min(1, firstpart*secondpart)
+        
       }
       u <- runif(1)
       if(u<accept.prob){
@@ -343,7 +343,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
 }
 
 block1(theta0[1], theta0[2], theta0[3], theta0[4],20)
-2%%2
+
 ```
 
 ```{r}
@@ -360,11 +360,10 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
       
       
       #Finding the acceptance probability
-      numerator.log <- -lambda0.prop*(t1-t0)-lambda1.prop*(t2-t1)+(y0+1)*log(lambda0.prop)+(y1+1)*log(lambda1.prop)-5*log(beta.prop)-1/beta.prop*(lambda0.prop+lambda1.prop)-1/beta.prop
-      denominator.log <- -lambda0*(t1-t0)-lambda1*(t2-t1)+(y0+1)*log(lambda0)+(y1+1)*log(lambda1)-5*log(beta)-1/beta*(lambda0+lambda1)-1/beta
-
-        accept.prob <- min(1, exp(numerator.log-denominator.log))
-      
+      alpha2 <- 5*log(beta)+(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-5*log(beta.prop)-(y0+2)*log(t1-t0+1/beta.prop)-(y1+2)*log(t2-t1+1/beta.prop)
+      print(alpha2)-1/beta.prop+1/beta
+      accept.prob <- min(1, exp(alpha2))
+      print(accept.prob)
       u <- runif(1)
       if(u<accept.prob){
         #accept
@@ -426,5 +425,5 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
 #block1(2, 2, 2, 2, 2)
 #block2(2, 2, 2, 2, 2)
 
-MCMC_block(theta0, 1000, 10,10)
+#MCMC_block(theta0, 1000, 10,10)
 ```
