@@ -1,3 +1,13 @@
+---
+title: "TMA4300 Computer Intensive Statistical Methods"
+subtitle: "Exercise 2"
+author: "Maja B. Mathiassen & Elsie B. Tandberg"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{bm}
+output: pdf_document
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
