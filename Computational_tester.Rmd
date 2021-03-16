@@ -219,7 +219,7 @@ trace <- function(simulation){
 trace(simulation3)
 ```
 
-From the trace plots in Figure \ref{tracesigma3} it seems likely that the parameters have converged. The values have stabilized after 250 iterations so this is the burn-in period for all the four parameters. For $\t_1$ we see that the values do not reach the full length of the interval, $(1851, 1962)$, this is probably due to our choice of tuning parameter $sigma$ which is the standard deviation in the normal distribution $t_1$ is sampled from. It is expected to observe a wider range in values for $t_1$ for a higher value of the tuning parameter.
+From the trace plots in Figure \ref{tracesigma3} it seems likely that the parameters have converged. The values have stabilized after 250 iterations so this is the burn-in period for all the four parameters. For $t_1$ we see that the values do not reach the full length of the interval, $(1851, 1962)$, this is probably due to our choice of tuning parameter $sigma$ which is the standard deviation in the normal distribution $t_1$ is sampled from. It is expected to observe a wider range in values for $t_1$ for a higher value of the tuning parameter.
 
 The mixing properties are evaluated by looking at the autocorrelation plots. 
 
@@ -313,8 +313,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       lambda0.prop <- rgamma(1, y0.prop+2, 1/(t1.prop-t0+1/beta)) 
       lambda1.prop <- rgamma(1, y1.prop+2, 1/(t2-t1.prop+1/beta))
       
-      print(t1.prop)
-      
+
       if(t1.prop<t0 || t1.prop>t2){
         accept.prob=0
       }
@@ -380,7 +379,7 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
       
       return(c(t1, lambda0, lambda1, beta))
 }
-block2(theta0[1], theta0[2], theta0[3], theta0[4],10)
+#block2(theta0[1], theta0[2], theta0[3], theta0[4],10)
 
 
 ```
