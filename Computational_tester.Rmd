@@ -255,7 +255,7 @@ trace(simulation2)
 #Making the autocorrelation plots for the same simulation
 autocorr(simulation2)
 ```
-In Figure \ref{tracesigma2} we observe a more narrow range for values of $t_1$ which is expected because the tuning parameter is smaller than the one considered in A5. Apart from that the trace plots are similar to the ones from A5, all have converged and the burn-in period is still considered to be 250 iteration. From the autocorrelation plots from Figure \ref{autosigma2} we observe a slightly lower correlation for small Lag for $\lambda_0$ and $\lmabda_1$ compared to Firgure \ref{autosigma3.}. SI LITT MER OM MIXING!
+In Figure \ref{tracesigma2} we observe a more narrow range for values of $t_1$ which is expected because the tuning parameter is smaller than the one considered in A5. Apart from that the trace plots are similar to the ones from A5, all have converged and the burn-in period is still considered to be 250 iteration. From the autocorrelation plots from Figure \ref{autosigma2} we observe a slightly lower correlation for small Lag for $\lambda_0$ and $\lambda_1$ compared to Figure \ref{autosigma3}. SI LITT MER OM MIXING!
 
 ```{r, fig.cap="\\label{tracesigma6} Trace plots when the tuning parameter $\\sigma$=6.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 6
