@@ -124,7 +124,7 @@ $$
 \end{aligned}
 $$
 
-The algortihm for the single site MCMC is now made.
+The algorithm for the single site MCMC is now made.
 ```{r}
 #Single site MCMC
 MCMC <- function(theta, n, sigma){
@@ -143,8 +143,8 @@ MCMC <- function(theta, n, sigma){
      #Sampling theta1 using Gibbs
       y0 <- sum(coal$date<t1[i-1])-1
       y1 <- 189-y0
-      lambda0[i] <- rgamma(1, y0+2, 1/(t1[i-1]-t0+1/beta[i-1]))
-      lambda1[i] <- rgamma(1, y1+2, 1/(t2-t1[i-1]+1/beta[i-1]))
+      lambda0[i] <- rgamma(1, y0+2, (t1[i-1]-t0+1/beta[i-1]))
+      lambda1[i] <- rgamma(1, y1+2, (t2-t1[i-1]+1/beta[i-1]))
       beta[i] <- rinvgamma(1, 4, 1+lambda0[i-1]+lambda1[i-1])
       
       
@@ -185,7 +185,7 @@ We will now run our single site MCMC algorithm.
 theta0 <- c(1900, 1, 1, 3)
 
 #Running the single site MCMC when the tuning parameter is 3
-simulation3 = MCMC(theta0,2000,3)
+simulation3 = MCMC(theta0,10000,3)
 ```
 
 To evaluate our algorithm we will consider the burn-in and mixing properties.
@@ -224,7 +224,7 @@ trace <- function(simulation){
 trace(simulation3)
 ```
 
-From the trace plots in Figure \ref{tracesigma3} it seems likely that the parameters have converged. The values have stabilized after 250 iterations so this is the burn-in period for all the four parameters. For $t_1$ we see that the values do not reach the full length of the interval, $(1851, 1962)$, this is probably due to our choice of tuning parameter $sigma$ which is the standard deviation in the normal distribution $t_1$ is sampled from. It is expected to observe a wider range in values for $t_1$ for a higher value of the tuning parameter.
+From the trace plots in Figure \ref{tracesigma3} it seems likely that the parameters have converged. The values have stabilized after about 250 iterations so this is the burn-in period for all the four parameters. For $t_1$ we see that the values do not reach the full length of the interval, $(1851, 1962)$, this is probably due to our choice of tuning parameter $sigma$ which is the standard deviation in the normal distribution $t_1$ is sampled from. It is expected to observe a wider range in values for $t_1$ for a higher value of the tuning parameter. The values for $\lambda_0$ and $\lambda_1$ also look resonable compared to the plot from Problem A1. We would expect a higher number of disaster per time up until the year 1900. As the trace plots show we would expect about 3 disaster per time ($\lambda_0$) up till $t_1$ which is estimated to be around 1890. After $t_1$ the number of disaster per time $\lambda_1$ is expected to decrase and this is what the parameter estimation for $\lambda_1$ shows as well, where the convergence lies arond 1 disaster per time. 
 
 The mixing properties are evaluated by looking at the autocorrelation plots. 
 
@@ -243,7 +243,7 @@ autocorr<-function(simulation){
 autocorr(simulation3)
 ```
 
-The autocorrelations plots for  $t_1$, $\lambda_0$, $\lambda_1$ and $\beta$ in Figure \ref{autosigma3} show a decreased correlation for increased values of Lag which is good. We observe that $t_1$, $\lambda_0$ and $\lambda_1$ have some correlation for values values that lie close but for higher Lag this correlation is negligible. 
+The autocorrelations plots for  $t_1$, $\lambda_0$, $\lambda_1$ and $\beta$ in Figure \ref{autosigma3} show a decreased correlation for increased values of Lag which is good. We observe that $t_1$ have some correlation for values values that lie close but for higher Lag this correlation is negligible. 
 
 ## 6
 Our algorithm has a tuning parameter $\sigma$ used to sample $t_1$ from the normal distribution. We will now explore how its value affect the burn-in and mixing properties. 
@@ -252,19 +252,38 @@ Our algorithm has a tuning parameter $\sigma$ used to sample $t_1$ from the norm
 ```{r, fig.cap="\\label{tracesigma2} Trace plots when the tuning parameter $\\sigma$=2.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 2
 simulation2<-MCMC(theta0,2000,2)
-#Makig the trace plots
+#Making the trace plots
 trace(simulation2)
 ```
+
+It is hard to say from Figure \ref{tracesigma2} if the parameters have converged, this is probably due to the burn-in period where we have large initial values for $\lambda_0$, $\lambda_1$ and $\beta$. From this it looks like the tuning parameters have an effect on the initial values of $\lambda_0$, $\lambda_1$ and $\beta$ since we did not have this problem when $sigma$=3.
+We will now exclude the 50 first iterations and evaluate the convergnce.
+
+
+```{r, fig.cap="\\label{tracesigma2.2} Trace plots when the tuning parameter $\\sigma$=2. Excluding the 50 first iterations.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 2
+simulation2.2<-MCMC(theta0,10000,2)[50:10000,]
+#Making the trace plots
+trace(simulation2.2)
+```
+
+From Figure \ref{tracesigma2.2} where some of the burn-in period is removed we observe convergence for all four parameters. We do still observe some burn-in so it is reasonable to believe that the burn-in period is about 250 iterations.We observe a more narrow range for values of $t_1$ which is expected because the tuning parameter is smaller than the one considered in A5. Apart from that the trace plots are similar to the ones from A5.The parameters have converged to reasonable values. 
+
 
 ```{r, fig.cap="\\label{autosigma2} Autocorrelation plots for $\\sigma$=2.",fig.width=6, fig.height=4}
 #Making the autocorrelation plots for the same simulation
 autocorr(simulation2)
 ```
-In Figure \ref{tracesigma2} we observe a more narrow range for values of $t_1$ which is expected because the tuning parameter is smaller than the one considered in A5. Apart from that the trace plots are similar to the ones from A5, all have converged and the burn-in period is still considered to be 250 iteration. From the autocorrelation plots from Figure \ref{autosigma2} we observe a slightly lower correlation for small Lag for $\lambda_0$ and $\lambda_1$ compared to Figure \ref{autosigma3}. SI LITT MER OM MIXING!
+```{r, fig.cap="\\label{autosigma2.2} Autocorrelation plots for $\\sigma$=2. Excluding the first 50 iterations",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(simulation2.2)
+```
+
+From the autocorrelation plots from Figure \ref{autosigma2} and \ref{autosigma2.2} it looks like the burn-in period have an effect on the mixing, as be observe a slightly higher correlation for $t1$ in Figure \ref{autosigma2} where the burn-in period is included. In addition we oberve small mixing for $\lambda_0$ and $\lambda_1$ when the burn-in is excluded. The correlation for $t_1$ look similar to the one from Figure \ref{autosigma3}, so the change in the tuning parameter does not look like it has an effect on the autocorrelation plots.
 
 ```{r, fig.cap="\\label{tracesigma6} Trace plots when the tuning parameter $\\sigma$=6.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 6
-simulation6<-MCMC(theta0,2000,6)
+simulation6<-MCMC(theta0,10000,6)
 trace(simulation6)
 ```
 
@@ -273,11 +292,11 @@ trace(simulation6)
 autocorr(simulation6)
 ```
 
-In Figure \ref{tracesigma6} and \ref{autosigma6} the tuning parameter is set to 6, we see that convergence is reached and the burn-in period is still 250 iterations. In addition we have a higher range of values for $t_1$ as expected for increased $sigma$. The mixing properties are slightly higher, we see more correlation for each value of Lag. 
+In Figure \ref{tracesigma6} and \ref{autosigma6} the tuning parameter is set to 6, we see that convergence is reached and the burn-in period is still 250 iterations. However we did not have the same problem as for $sigma=2$ where we got high initial values for the parameters. In addition we have a higher range of values for $t_1$ as expected for increased $sigma$. The mixing properties are slightly lower, we still have som correlation for $t_1$, but for the other parameters we see no correlation. 
 
 ```{r, fig.cap="\\label{tracesigma20} Trace plots when the tuning parameter $\\sigma$=20.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 20
-simulation20<-MCMC(theta0,2000,20)
+simulation20<-MCMC(theta0,10000,20)
 trace(simulation20)
 ```
 
@@ -285,7 +304,7 @@ trace(simulation20)
 #Making the autocorrelation plots for the same simulation
 autocorr(simulation20)
 ```
-In Figure \ref{tracesigma20} and \ref{autosigma20} the tuning parameter is set to 20, we see that convergence is reached and the burn-in period is still 250 iterations. For all the parameters the trace plots show a wider range, and this time $t_1$ reaches the whole interval. The mixing properties are slightly higher, we see more correlation for each value of Lag. 
+In Figure \ref{tracesigma20} and \ref{autosigma20} the tuning parameter is set to 20, we see that convergence is reached and the burn-in period is still 250 iterations. For all $t_1$ the trace plot show a wider range. The mixing properties are slightly higher for $t_1$, $\lambda_0$ and $\lambda_1$ which is not as expected from the previous aitocorrelation plots where it looks like an increased tuning parameter caused lower mixing. 
 
 ## 7
 We will now implement a block Metropolis Hastings algortihm using two block proposals. The first proposal for $(t_1, \lambda_0, \lambda_1)$ where $\beta$ is kept unchanged. Proposal values $(\tilde t_1, \tilde \lambda_0, \tilde \lambda_1)$ will be generated by first generating $(\tilde t_1$ from the normal distribution centered at the current value of $t_1$, which was done in A4. And then generating $\tilde \lambda_0, \tilde \lambda_1)$ with the new value of $(\tilde t_1$. The acceptance probability is now changed so that it is now dependent on all the three parameters. Resulting in the following acceptance probability on log scale.
@@ -301,7 +320,6 @@ $$
 
 ```{r}
 #Making MCMC with block
-#theta0 <- c(1900, 1, 1, 3)
 t0 <- 1851
 t2 <- 1962
 
@@ -315,8 +333,8 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       t1.prop <-rnorm(1, t1, sigma.t1) #Generating proposal value for t1 from normal distribution
       y0.prop <- sum(coal$date<t1.prop)-1
       y1.prop <- 189-y0.prop
-      lambda0.prop <- rgamma(1, y0.prop+2, 1/(t1.prop-t0+1/beta)) 
-      lambda1.prop <- rgamma(1, y1.prop+2, 1/(t2-t1.prop+1/beta))
+      lambda0.prop <- rgamma(1, y0.prop+2, t1.prop-t0+1/beta) 
+      lambda1.prop <- rgamma(1, y1.prop+2, t2-t1.prop+1/beta)
       
 
       if(t1.prop<t0 || t1.prop>t2){
@@ -348,8 +366,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       
       return(c(t1.update, lambda0.update, lambda1.update, beta))
 }
-theta0=c(1914.177,	9655.250,	1786.733,	1.963606)
-block1(theta0[1], theta0[2], theta0[3], theta0[4],20)
+
 
 ```
 
@@ -362,16 +379,14 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
       
       #Metropolis-Hastings for sampling from t1
       beta.prop <-rtnorm(1, beta, sigma.beta, lower=0) #Generating proposal value for t1 from normal distribution
-      lambda0.prop <- rgamma(1, y0+2, 1/(t1-t0+1/beta.prop)) 
-      lambda1.prop <- rgamma(1, y1+2, 1/(t2-t1+1/beta.prop))
+      lambda0.prop <- rgamma(1, y0+2, t1-t0+1/beta.prop) 
+      lambda1.prop <- rgamma(1, y1+2, t2-t1+1/beta.prop)
       
       
       #Finding the acceptance probability
       alpha2 <- 5*log(beta)+(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-5*log(beta.prop)-(y0+2)*log(t1-t0+1/beta.prop)-(y1+2)*log(t2-t1+1/beta.prop)-1/beta.prop+1/beta
       
-      #print(alpha2)
       accept.prob2 <- min(1, exp(alpha2))
-      #print(accept.prob)
       u <- runif(1)
       if(u<accept.prob2){
         #accept
@@ -390,9 +405,6 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
       
       return(c(t1, lambda0, lambda1, beta))
 }
-block2(theta0[1], theta0[2], theta0[3], theta0[4],3)
-
-
 ```
 
 
@@ -407,8 +419,6 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
   lambda1[1]<-theta[3]
   beta <- rep(0,n)
   beta[1]<-theta[4]
-  
-  block1(t1[i-1], lambda0[i-1], lambda1[i-1], beta[i-1], sigma.t1)
   
   #Generating n samples of the parameters
   for(i in 2:n){
@@ -433,18 +443,117 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
   return(thetamat)
 }
 
-#block1(2, 2, 2, 2, 2)
-#block2(1860, 2, 2, 2, 2)
 
-MCMC_block(theta0,2000, 10,2 )
+
+MCMC_block(theta0,2000, 3,3 )
 
 ```
 
+```{r, fig.cap="\\label{traceblocksigma331} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 20
+blocksimulation33<-MCMC_block(theta0,10000,3,3)
+trace(blocksimulation33)
+```
+
+From the trace plots we observe high initial values for $\lambda_0$ and $\lambda_1$, this is problem might be caused by the burn-in period, and we are not able to se if it has converged for values around 3 and 1 because the y-axis is scaled to high. Trying to solve the problem by excluding the first 50 iterations below.
+
+```{r, fig.cap="\\label{traceblocksigma332} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 20
+blocksimulation3<-MCMC_block(theta0,10000,3,3)[50:10000,]
+trace(blocksimulation3)
+```
+
+As expected Figure \ref{traceblocksigma332} shows that our parameters have converged we were only unable to see it in Figure \ref{traceblocksigma331} due to high initial values of $\lambda_0$ and $\lambda_1$. Noting that the first 50 iterations did not entirely get rid of the burn-in period, for all four parameters the burn-in period is estimated to be 250 iterations. 
+
+```{r, fig.cap="\\label{blockautosigma33} Autocorrelation plots for Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(blocksimulation3)
+```
+
+In Figure \ref{blockautosigma33} we observe a higher mixing properties for all parameters. For $t_1$ and $\beta$ this can be explained by the way our algorithm alternaates between the two blocks. $t_1$ and $\beta$ are kept constant for every other step, so this will lead to a high correlation. For  $\lambda_0$ and $\lambda_1$ we observe higher correlation than for the single site algorithm, this might indicate that our acceptance probability is lower so that we update the values more rarely. 
 
 
+```{r, fig.cap="\\label{traceblocksigma66} Trace plots when the tuning parameters $\\sigma_{t_1}$=6 and $\\sigma_{\beta}$=6.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 20
+blocksimulation66<-MCMC_block(theta0,10000,6,6)
+trace(blocksimulation66)
+```
+
+```{r, fig.cap="\\label{blockautosigma66} Autocorrelation plots for Trace plots when the tuning parameters $\\sigma_{t_1}$=6 and $\\sigma_{\\beta}$=6.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(blocksimulation66)
+```
 
 
+In Figure \ref{traceblocksigma66} and \ref{blockautosigma66} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=6 and $\sigma_{\beta}$=6. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is decreased for $\beta$ and $\t_1$.
 
+
+```{r, fig.cap="\\label{traceblocksigma2020} Trace plots when the tuning parameters $\\sigma_{t_1}$=20 and $\\sigma_{\beta}$=20.",fig.width=6, fig.height=4}
+#Running the single site MCMC with tuning parameter equal to 20
+blocksimulation2020<-MCMC_block(theta0,10000,20,20)
+trace(blocksimulation2020)
+```
+
+```{r, fig.cap="\\label{blockautosigma2020} Autocorrelation plots for Trace plots when the tuning parameters $\\sigma_{t_1}$=6 and $\\sigma_{\\beta}$=6.",fig.width=6, fig.height=4}
+#Making the autocorrelation plots for the same simulation
+autocorr(blocksimulation2020)
+```
+In Figure \ref{traceblocksigma2020} and \ref{blockautosigma2020} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=20 and $\sigma_{\beta}$=20. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is increased for all parameters. This might indicate that we get a low acceptance probability such that most of the values are inchanged for each step. 
+
+
+We will now use the simualted data to estimate the marginal posterior distributions of the parameters.
+
+```{r, fig.cap="\\label{density} Density plot of all the estimated parameters to togheter with the theoretical distributions.",fig.width=6, fig.height=4}
+x<-seq(0,4,by=0.00001)
+y0 <- sum(coal$date<mean(coal$date))-1
+y1 <- 189-y0
+beta<-mean(blocksimulation3[,4])
+
+#Plotting a histogram of t1 to look at the marginal posterior distribution
+pp1<-ggplot()+
+  geom_density(aes(x=blocksimulation3[,1],..scaled..))+
+  labs(title = expression(paste("Density of ",t[1])), x=expression(t[1]))
+
+#Plotting a histogram of lambda0 to look at the marginal posterior distribution
+pp2<-ggplot()+
+  geom_density(aes(x=blocksimulation3[,2],colour='Fitted'), fill="#FFCCCC")+
+  geom_line(aes(x=x,y=dgamma(x,shape=y0+2,scale=1/(1/beta+mean(coal$date)-t0)), colour="Theoretical"))+
+  labs(title=expression(paste("Density of ",lambda[0])),x=expression(lambda[0]))
+
+#Plotting a histogram of lambda1 to look at the marginal posterior distribution
+pp3<-ggplot()+
+  geom_density(aes(x=blocksimulation3[,3], colour='Fitted'), fill="#FFCCCC")+
+    geom_line(aes(x=x,y=dgamma(x,shape=y1+2,scale=1/(1/beta-mean(coal$date)+t2)), colour="Theoretical"))+
+  labs(title=expression(paste("Density of ",lambda[1])),x=expression(lambda[1]))
+
+#Plotting a histogram of beta to look at the marginal posterior distribution
+pp4<-ggplot()+
+  geom_density(aes(x=blocksimulation3[,4],colour='Fitted'), fill="#FFCCCC")+
+  geom_line(aes(x=x,y=dinvgamma(x,shape=4,scale=1/(1+mean(blocksimulation3[,2])+mean(blocksimulation3[,3]))), colour='Theoretical'))+
+  labs(title=expression(paste("Density of ",beta)),x=expression(beta))
+
+grid.arrange(pp1, pp2, pp3, pp4, nrow = 2)
+
+  
+```
+
+From Figure \ref{density} we see that $\lambda_0$, $\lambda_1$ and $\beta$ follow their theoretical distribution. The density of $\t_1$ is not easy to relate to a known distribution so it is hard to say if it follows a theoretical curve. However the values of $\t_1$ look reasonable as most of them are in the middle of the interval which is expected since we are sampling from a normal distribution.
+
+```{r}
+#Calculating the estimated means and covariance
+meant1 <- mean(simulation3[,1])
+meanlambda0 <- mean(simulation3[,2])
+meanlambda1 <- mean(simulation3[,3])
+meanbeta <- mean(simulation3[,4])
+covlambda01 <- cov(simulation3[,2], simulation3[,3] )
+
+meant1
+meanlambda0
+meanlambda1
+meanbeta
+covlambda01
+```
+We see that E[$t_1|x$]=`r meant1`, E[$\lambda_0|x$]=`r meanlambda0`, E[$\lambda_1|x$]=`r meanlambda1`, E[$\beta|x$]=`r meanbeta` and Cov[$\lambda_0, \lambda_1|x$]=`r covlambda01`. All estimated means seem reasonable as 1890 is in the middle of the time interval, and we expect more disasters before 1890, and less disasters afterwards. The covariance indicates that $\lambda_0$ and $\lambda_1$ are close to independent, which is good because this is what we have assumed earlier. 
 
 # Problem B: INLA for Gaussian data
  
@@ -595,6 +704,7 @@ ggplot()+
 ```
 ## B3
 ```{r}
-
+install.packages("INLA", repos=c(getOption("repos"),
+INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 ```
 
