@@ -27,7 +27,7 @@ In this problem we look at a data set of mining disasters in the UK, from March 
 ## A1
 
 To get an impression of the data set, we make a plot of the cumulative number of disasters as a function of time. 
-```{r A1, fig.cap="The cummulative number of coal mining disaster per time.",fig.width=6, fig.height=4}
+```{r A1, fig.cap="Caption",fig.width=6, fig.height=4}
 #The x-axis contains the specific time of an accident
 x <- coal$date
 
@@ -304,8 +304,6 @@ trace(simulation20)
 #Making the autocorrelation plots for the same simulation
 autocorr(simulation20)
 ```
-
-
 In Figure \ref{tracesigma20} and \ref{autosigma20} the tuning parameter is set to 20, we see that convergence is reached and the burn-in period is still 250 iterations. For all $t_1$ the trace plot show a wider range. The mixing properties are slightly higher for $t_1$, $\lambda_0$ and $\lambda_1$ which is not as expected from the previous aitocorrelation plots where it looks like an increased tuning parameter caused lower mixing. 
 
 ## A7
@@ -325,14 +323,17 @@ The joint distribution for $(\lambda_0, \lambda_1)$ is
 $$
 f(\lambda_0,\lambda_1|t_1,\beta) = \lambda_0^{y_0+1}\lambda_1^{y_1+1}\exp\{-\lambda_0(\frac{1}{\beta}+t_1-t_0)-\lambda_0(\frac{1}{\beta}+t_2-t_1)\} = f(\lambda_0|t_1,\beta)f(\lambda_1|t_1,\beta).
 $$
-
 Additionally, the proposal distribution for $\tilde t_1$ is a normal distribution only dependent on $t_1$ and a tuning parameter $\sigma_1$. Thus 
 $$
 \begin{aligned}
 Q(\tilde{t}_1, \tilde{\lambda}_0, \tilde{\lambda}_1|t_1, \lambda_0, \lambda_1,\beta) &= f(\tilde{t}_1|t_1)f(\tilde{\lambda}_0, \tilde{\lambda}_1|\tilde{t}_1, \beta) = f(\tilde{t}_1|t_1)f(\tilde{\lambda}_0|\tilde{t}_1, \beta)f(\tilde{\lambda}_1|\tilde{t}_1, \beta) \\
+
 &= \mathcal{N}(t_1, \sigma_1^2)\frac{(\frac{1}{\beta}+\tilde{t}_1-t_0)^{\tilde{y}_0+2}}{\Gamma(\tilde{y}_0+2)} \tilde{\lambda}_0^{\tilde{y}_0+1}\exp\{-\tilde{\lambda}_0(\frac{1}{\beta}+\tilde{t}_1-t_0)\} \\
+
 &\quad \cdot\frac{(\frac{1}{\beta}+t_2-\tilde{t}_1)^{\tilde{y}_1+2}}{\Gamma(\tilde{y}_1+2)} \tilde{\lambda}_0^{\tilde{y}_1+1}\exp\{-\tilde{\lambda}_1(\frac{1}{\beta}+t_2-\tilde{t}_1)\}, \\
+
 Q(t_1, \lambda_0, \lambda_1|\tilde{t}_1, \tilde{\lambda}_0, \tilde{\lambda}_1, \beta)) &= \mathcal{N}(\tilde t_1, \sigma_1^2)\frac{(\frac{1}{\beta}+t_1-t_0)^{y_0+2}}{\Gamma(y_0+2)} \lambda_0^{y_0+1}\exp\{-\lambda_0(\frac{1}{\beta}+t_1-t_0)\} \\
+
 &\quad \cdot\frac{(\frac{1}{\beta}+t_2-t_1)^{y_1+2}}{\Gamma(y_1+2)} \lambda_0^{y_1+1}\exp\{-\lambda_1(\frac{1}{\beta}+t_2-t_1)\}.
 \end{aligned}
 $$
@@ -343,7 +344,7 @@ $$
 $$
 
 
-The second block keeps $t_1$ constant. The proposed new values $(\tilde\beta, \tilde\lambda_0, \tilde\lambda_1)$ are found by first generating $\tilde\beta$ from a normal distribution centered around the old value $\beta$ and using variance $\sigma_2^2$, before finding new values $(\tilde\lambda_0,\tilde\lambda_1)$ using $\tilde\beta$. The acceptance probability for the proposed values is 
+The second block keeps $t_1$ constant. The proposed new values $(\tilde\beta, \tilde\lambda_0, \tilde\lambda_1)$ are found by first generating $\tilde\beta$ from a normal distribution centered around the old value $\beta$ and using variance $\sigma_2^2$, before finding new values $(\tilde\lambda_0,\tilde\lambda_1)$ using $\tilde\beta$. The acceptance propability for the proposed values is 
 
 $$
 \alpha_2 = \min\Bigg(1,\frac{f(\tilde{\beta}, \tilde{\lambda}_0, \tilde{\lambda}_1|t_1)}{f(\beta, \lambda_0, \lambda_1|t_1)} \times \frac{Q(\beta, \lambda_0, \lambda_1|t_1, \tilde{\lambda}_0, \tilde{\lambda}_1, \tilde\beta))}{Q(\tilde{\beta}, \tilde{\lambda}_0, \tilde{\lambda}_1|t_1, \lambda_0, \lambda_1,\beta))} \Bigg)
@@ -359,8 +360,10 @@ and $f(\tilde\beta, \tilde\lambda_0,\tilde\lambda_1|t_1)$ is similar. Next we ha
 $$
 \begin{aligned}
 Q(\tilde{\beta}, \tilde{\lambda}_0, \tilde{\lambda}_1|t_1, \lambda_0, \lambda_1,\beta) &= f(\tilde{\beta}|\beta)f(\tilde{\lambda}_0|t_1, \tilde\beta)f(\tilde{\lambda}_1|t_1, \tilde\beta) \\
+
 &= \mathcal{N}(\beta, \sigma_2^2)\frac{(\frac{1}{\tilde\beta}+t_1-t_0)^{y_0+2}}{\Gamma(y_0+2)} \tilde{\lambda}_0^{y_0+1}\exp\{-\tilde{\lambda}_0(\frac{1}{\tilde\beta}+t_1-t_0)\} \\ 
 &\quad \cdot\frac{(\frac{1}{\tilde\beta}+t_2-t_1)^{y_1+2}}{\Gamma(y_1+2)} \tilde{\lambda}_0^{y_1+1}\exp\{-\tilde{\lambda}_1(\frac{1}{\tilde\beta}+t_2-t_1)\},  \\
+
 Q(\beta,\lambda_0,\lambda_1|t_1,\tilde\lambda_0,\tilde\lambda_1,\tilde\beta) &= \mathcal{N}(\tilde\beta, \sigma_2^2)\frac{(\frac{1}{\beta}+t_1-t_0)^{y_0+2}}{\Gamma(y_0+2)} \lambda_0^{y_0+1}\exp\{-\lambda_0(\frac{1}{\beta}+t_1-t_0)\} \\ 
 &\quad \cdot\frac{(\frac{1}{\beta}+t_2-t_1)^{y_1+2}}{\Gamma(y_1+2)} \lambda_0^{y_1+1}\exp\{-\lambda_1(\frac{1}{\beta}+t_2-t_1)\}.
 \end{aligned}
@@ -384,8 +387,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
 
       
       #Metropolis-Hastings for sampling from t1
-      #Generating proposal value for t1 from normal distribution
-      t1.prop <-rnorm(1, t1, sigma.t1) 
+      t1.prop <-rnorm(1, t1, sigma.t1) #Generating proposal value for t1 from normal distribution
       y0.prop <- sum(coal$date<t1.prop)-1
       y1.prop <- 189-y0.prop
       lambda0.prop <- rgamma(1, y0.prop+2, t1.prop-t0+1/beta) 
@@ -398,6 +400,7 @@ block1 <- function(t1, lambda0, lambda1, beta, sigma.t1){
       else{
         #Finding the acceptance probability
         firstpart <-(y0+2)*log(t1-t0+1/beta)+(y1+2)*log(t2-t1+1/beta)-(y0.prop+2)*log(t1.prop-t0+1/beta)-(y1.prop+2)*log(t2-t1.prop+1/beta)
+        secondpart <-log((gamma(y0.prop+2)*gamma(y1.prop+2)))-log((gamma(y0+2)*gamma(y1+2)))
         sec <- sum(log(1:y0.prop+1))+sum(log(1:y1.prop+1))-sum(log(1:y0+1))-sum(log(1:y1+1))
         
       
@@ -432,8 +435,7 @@ block2 <- function(t1, lambda0, lambda1, beta, sigma.beta){
 
       
       #Metropolis-Hastings for sampling from t1
-      #Generating proposal value for t1 from normal distribution
-      beta.prop <-rtnorm(1, beta, sigma.beta, lower=0) 
+      beta.prop <-rtnorm(1, beta, sigma.beta, lower=0) #Generating proposal value for t1 from normal distribution
       lambda0.prop <- rgamma(1, y0+2, t1-t0+1/beta.prop) 
       lambda1.prop <- rgamma(1, y1+2, t2-t1+1/beta.prop)
       
@@ -500,19 +502,19 @@ MCMC_block <- function(theta, n, sigma.t1, sigma.beta){
 
 
 
-#MCMC_block(theta0,2000, 3,3 )
+MCMC_block(theta0,2000, 3,3 )
 
 ```
 
-```{r, fig.cap="\\label{traceblocksigma331} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\\beta}$=3.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{traceblocksigma331} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 20
 blocksimulation33<-MCMC_block(theta0,10000,3,3)
 trace(blocksimulation33)
 ```
 
-From the trace plots in Figure \ref{traceblocksigma331} we observe high initial values for $\lambda_0$ and $\lambda_1$, this is problem might be caused by the burn-in period, and we are not able to see if it has converged for values around 3 and 1 because the y-axis is scaled to high. Trying to solve the problem by excluding the first 50 iterations below.
+From the trace plots we observe high initial values for $\lambda_0$ and $\lambda_1$, this is problem might be caused by the burn-in period, and we are not able to se if it has converged for values around 3 and 1 because the y-axis is scaled to high. Trying to solve the problem by excluding the first 50 iterations below.
 
-```{r, fig.cap="\\label{traceblocksigma332} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{traceblocksigma332} Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 20
 blocksimulation3<-MCMC_block(theta0,10000,3,3)[50:10000,]
 trace(blocksimulation3)
@@ -520,15 +522,15 @@ trace(blocksimulation3)
 
 As expected Figure \ref{traceblocksigma332} shows that our parameters have converged we were only unable to see it in Figure \ref{traceblocksigma331} due to high initial values of $\lambda_0$ and $\lambda_1$. Noting that the first 50 iterations did not entirely get rid of the burn-in period, for all four parameters the burn-in period is estimated to be 250 iterations. 
 
-```{r, fig.cap="\\label{blockautosigma33} Autocorrelation plots for Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{blockautosigma33} Autocorrelation plots for Trace plots when the tuning parameters $\\sigma_{t_1}$=3 and $\\sigma_{\beta}$=3. Excluding the first 50 iterations.",fig.width=6, fig.height=4}
 #Making the autocorrelation plots for the same simulation
 autocorr(blocksimulation3)
 ```
 
-In Figure \ref{blockautosigma33} we observe a higher mixing properties for all parameters. For $t_1$ and $\beta$ this can be explained by the way our algorithm alternates between the two blocks. $t_1$ and $\beta$ are kept constant for every other step, so this will lead to a high correlation. For  $\lambda_0$ and $\lambda_1$ we observe higher correlation than for the single site algorithm, this might indicate that our acceptance probability is lower so that we update the values more rarely. 
+In Figure \ref{blockautosigma33} we observe a higher mixing properties for all parameters. For $t_1$ and $\beta$ this can be explained by the way our algorithm alternaates between the two blocks. $t_1$ and $\beta$ are kept constant for every other step, so this will lead to a high correlation. For  $\lambda_0$ and $\lambda_1$ we observe higher correlation than for the single site algorithm, this might indicate that our acceptance probability is lower so that we update the values more rarely. 
 
 
-```{r, fig.cap="\\label{traceblocksigma66} Trace plots when the tuning parameters $\\sigma_{t_1}$=6 and $\\sigma_{\\beta}$=6.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{traceblocksigma66} Trace plots when the tuning parameters $\\sigma_{t_1}$=6 and $\\sigma_{\beta}$=6.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 20
 blocksimulation66<-MCMC_block(theta0,10000,6,6)
 trace(blocksimulation66)
@@ -540,10 +542,10 @@ autocorr(blocksimulation66)
 ```
 
 
-In Figure \ref{traceblocksigma66} and \ref{blockautosigma66} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=6 and $\sigma_{\beta}$=6. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is decreased for $\beta$ and $t_1$.
+In Figure \ref{traceblocksigma66} and \ref{blockautosigma66} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=6 and $\sigma_{\beta}$=6. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is decreased for $\beta$ and $\t_1$.
 
 
-```{r, warning = FALSE, fig.cap="\\label{traceblocksigma2020} Trace plots when the tuning parameters $\\sigma_{t_1}$=20 and $\\sigma_{\\beta}$=20.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{traceblocksigma2020} Trace plots when the tuning parameters $\\sigma_{t_1}$=20 and $\\sigma_{\beta}$=20.",fig.width=6, fig.height=4}
 #Running the single site MCMC with tuning parameter equal to 20
 blocksimulation2020<-MCMC_block(theta0,10000,20,20)
 trace(blocksimulation2020)
@@ -553,14 +555,13 @@ trace(blocksimulation2020)
 #Making the autocorrelation plots for the same simulation
 autocorr(blocksimulation2020)
 ```
+In Figure \ref{traceblocksigma2020} and \ref{blockautosigma2020} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=20 and $\sigma_{\beta}$=20. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is increased for all parameters. This might indicate that we get a low acceptance probability such that most of the values are inchanged for each step. 
 
-In Figure \ref{traceblocksigma2020} and \ref{blockautosigma2020} we see the trace plots and autocorrelation plots when $\sigma_{t_1}$=20 and $\sigma_{\beta}$=20. Here we do not have the same problem with high initial values as we did for $\sigma_{t_1}$=3 and $\sigma_{\beta}$=3. This is similar to the results from Problem A6. Considering the autocorrelation plots we see that the correlation is increased for all parameters. This might indicate that we get a low acceptance probability such that most of the values are unchanged for each step. 
 
-
-We will now use the simulated data to estimate the marginal posterior distributions of the parameters.
+We will now use the simualted data to estimate the marginal posterior distributions of the parameters.
 
 ```{r, fig.cap="\\label{density} Density plot of all the estimated parameters to togheter with the theoretical distributions.",fig.width=6, fig.height=4}
-x<-seq(0,7,by=0.00001)
+x<-seq(0,4,by=0.00001)
 y0 <- sum(coal$date<mean(coal$date))-1
 y1 <- 189-y0
 beta<-mean(blocksimulation3[,4])
@@ -593,7 +594,7 @@ grid.arrange(pp1, pp2, pp3, pp4, nrow = 2)
   
 ```
 
-From Figure \ref{density} we see that $\lambda_0$, $\lambda_1$ and $\beta$ follow their theoretical distribution. The density of $t_1$ is not easy to relate to a known distribution so it is hard to say if it follows a theoretical curve. However the values of $t_1$ look reasonable as most of them are in the middle of the interval which is expected since we are sampling from a normal distribution.
+From Figure \ref{density} we see that $\lambda_0$, $\lambda_1$ and $\beta$ follow their theoretical distribution. The density of $\t_1$ is not easy to relate to a known distribution so it is hard to say if it follows a theoretical curve. However the values of $\t_1$ look reasonable as most of them are in the middle of the interval which is expected since we are sampling from a normal distribution.
 
 ```{r}
 #Calculating the estimated means and covariance
@@ -602,14 +603,19 @@ meanlambda0 <- mean(simulation3[,2])
 meanlambda1 <- mean(simulation3[,3])
 meanbeta <- mean(simulation3[,4])
 covlambda01 <- cov(simulation3[,2], simulation3[,3] )
-```
 
+meant1
+meanlambda0
+meanlambda1
+meanbeta
+covlambda01
+```
 We see that E[$t_1|x$]=`r meant1`, E[$\lambda_0|x$]=`r meanlambda0`, E[$\lambda_1|x$]=`r meanlambda1`, E[$\beta|x$]=`r meanbeta` and Cov[$\lambda_0, \lambda_1|x$]=`r covlambda01`. All estimated means seem reasonable as 1890 is in the middle of the time interval, and we expect more disasters before 1890, and less disasters afterwards. The covariance indicates that $\lambda_0$ and $\lambda_1$ are close to independent, which is good because this is what we have assumed earlier. 
 
 # Problem B: INLA for Gaussian data
  
 In this problem we will look at smoothing of a time series, using a simulated data set. The data set is plotted below. 
-``` {r, fig.cap="\\label{dislay} Displaying the data set.",fig.width=6, fig.height=4}
+``` {r}
 id = "http://www.math.ntnu.no/emner/TMA4300/2020v/Exercise/exercise2/Gaussiandata.txt"
 df <- read.table(id)
 n = dim(df)[1]
@@ -703,7 +709,7 @@ A_matrix = function(d) {
 ```
 
 
-```{r, fig.cap="\\label{hist} Histogram of the simulated data. To the left we see the histogram of the $\\theta$ samples and to the right we see the  $\\eta$ samples.",fig.width=6, fig.height=4}
+```{r}
 #Making block Gibbs algorithm
 gibbs_block <- function(eta, n, iter){
   theta <- rep(1,iter)
@@ -713,7 +719,7 @@ gibbs_block <- function(eta, n, iter){
   alpha <- n/2
 
     for(i in 2:iter){
-    beta <- 1+1/2*t(eta_mat[,i-1])%*%A%*%eta_mat[,i-1]
+    beta <- 1/(t(eta_mat[,i-1])%*%A%*%eta_mat[,i-1])
 
     #Sampling theta from gamma distribution, gibbs step
     theta[i] <- rgamma(1, alpha, beta)
@@ -732,13 +738,11 @@ eta[n/2]<-4
 samples<-gibbs_block(eta, n, iter)
 samples.theta = samples[1,]
 samples.eta = samples[-1,]
-
-par(mfrow = c(1, 2))
-truehist(samples.theta, xlab=expression(theta))
-truehist(samples.eta[10,], xlab=expression(eta))
+truehist(samples.theta)
+truehist(samples.eta[10,])
 ```
 
-```{r, fig.cap="\\label{confint} 95% confidence interval.",fig.width=6, fig.height=4}
+```{r}
 mean_values <- rep(0,n)
 var_values <- rep(0, n)
 upper <-rep(0,n)
@@ -757,18 +761,9 @@ ggplot()+
   geom_point(aes(x=x, y=df$V1))
 
 ```
-
 ## B3
-We want to approximate the posterior marginal for the hyperparameter $\theta$, which can be written as
-$$
-\begin{aligned}
-\pi(\theta|\bm{y}) &\propto \frac{\pi(\bm{y}|\bm{\eta},\theta)\pi(\bm{\eta}|\theta)\pi(\theta)}{\pi(\bm{\eta}|\theta,\bm{y})} \\
-& \propto \frac{ \exp\{-\frac{1}{2}(\bm{y}-\bm{\eta})^T(\bm{y}-\bm{\eta})\} \cdot \theta^{(T-2)/2}\exp\{-\frac{1}{2}\bm{\eta}^TQ(\theta)\bm{\eta}\} \cdot \exp\{-\theta\} } { \det((Q(\theta)+I)^{-1})^{-1/2}\exp\{-\frac{1}{2}(\bm{\eta}-(Q(\theta)+I)^{-1}\bm{y})^T(Q(\theta)+I)(\bm{\eta}-(Q(\theta)+I)\} } \\
-&=\theta^{(T-2)/2}\det(Q(\theta)+I)^{-1/2}\exp\{-\theta-\frac{1}{2}\bm{y}^T(I-(Q(\theta)+I)^{-1})\bm{y}\}.
-\end{aligned}
-$$
-In order to find an approximation, we use a grid of values for $\theta$ between $0$ and $6$, and calculates $\pi(\theta|\bm{y})$ for the values in the grid.
-```{r, fig.cap="\\label{confint} 95% confidence interval.",fig.width=6, fig.height=4}
+
+```{r}
 pi_theta_given_y = function(theta_grid, y) {
   T = length(y)
   A = A_matrix(T)
@@ -786,7 +781,8 @@ pi_theta_given_y = function(theta_grid, y) {
 theta = seq(0, 6, by=0.01)
 y = pi_theta_given_y(theta, df$V1)
 y = y / (sum(y)*0.01)
-
+length(y)
+length(theta_samples)
 ggplot() + 
   geom_density(aes(x=samples.theta, colour = "Noe"), fill="#FFCCCC")+
   geom_line( aes(x=theta, y=y, colour = "Noe annet"))
@@ -795,24 +791,8 @@ ggplot() +
 
 
 # B4 
-Next we want to look at an approximation of the marginal posterior for the smooth effect, which is
-$$
-\begin{aligned}
-\pi(\eta_i|\bm{y})&=\int\pi(\eta_i|\bm{y},\theta)\pi(\theta|\bm{y})d\theta \\
-&\approx \sum_{k=1}^N\pi(\eta_i|\theta_k,\bm{y})\pi(\theta_k|\bm{y})\Delta_\theta
-\end{aligned}
-$$
-where $\Delta_\theta=\theta_k-\theta_{k-1}$ is the constant step size between the values of $\theta$ in the grid.
+```{r}
 
-We know that $\pi(\bm{\eta}|\theta,\bm{y})\sim\mathcal{N}((Q(\theta)+I)^{-1}\bm{y}, (Q(\theta)+I)^{-1})$, and therefore we assume 
-$$
-\begin{aligned}
-\pi(\eta_i|\theta,\bm{y})\sim\mathcal{N}\big([(Q(\theta)+I)^{-1}\bm{y}]_i, [(Q(\theta)+I)^{-1}]_{ii}\big).
-\end{aligned}
-$$
-To calculate the approximation we use an additional grid, this one for $\eta$ and has values between $-2$ and $2$. 
-
-```{r, fig.cap="\\label{integral}....",fig.width=6, fig.height=4}
 pi_eta_10_given_theta_y = function(eta_grid, theta, y) {
   A = A_matrix(length(y))
   I = diag(1, length(y))
@@ -841,29 +821,5 @@ pi = pi / (sum(pi)*0.01)
 ggplot() + 
   geom_density(aes(x=samples.eta[10,], colour = "Noe"), fill="#FFCCCC") +
   geom_line( aes(x=eta, y=pi, colour = "Noe annet"))
-```
-
-
-## B5
-```{r}
-#Loding the INLA package
-library(INLA)
-```
-
-We now want to compare our calculations to the results from the built in INLA library. 
-```{r}
-hyper = list(prec = list(prior = "loggamma", param = c(1,1)) )
-formula = y ~ f(t, model = "rw2", hyper = hyper, cyclic = FALSE, constr = FALSE) -1
-data = data.frame(y = df$V1, t = seq(1,length(df$V1)))
-
-result = inla(formula = formula, family = "gaussian", data = data, quantiles = c(0.025, 0.5, 0.975), control.predictor = list(link=1))
-df.inla = data.frame(t = data$t, eta.mean = result$summary.random$t$mean, linear.pred.mean = result$summary.linear.predictor$mean, lower = result$summary.random$t$`0.025quant`, upper = result$summary.random$t$`0.975quant`)
-
-ggplot(df.inla) + 
-  geom_line(aes(x = t, y = eta.mean)) + 
-  geom_line(aes(x = t, y = lower)) +
-  geom_line(aes(x = t, y = upper)) + 
-  geom_point(aes(x = t, y = df$V1))
 
 ```
-
