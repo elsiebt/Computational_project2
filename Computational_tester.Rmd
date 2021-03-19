@@ -1,0 +1,50 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## B5
+We now want to compare our calculations to the results from the built in INLA library. Then we have to redefine the hyper parameter to be on log scale, $\Theta = \log(\theta)$, which has a log-gamma distribution with parameters $(1,1)$. We want to find the mean of the smooth effect and a $95\%$ confidence interval.
+```{r, message = FALSE, warning = FALSE, fig.cap="\\label{inla} Results of using the INLA package on our data. The figure shows the mean of the smooth effect with a 95 % confidence interval, the mean of the linear predictor, and the data points."}
+library(INLA)
+hyper = list(prec = list(prior = "loggamma", param = c(1,1)) ) # Defining hyper parameter
+formula = y ~ f(t, model = "rw2", hyper = hyper, cyclic = FALSE, constr = FALSE) -1 
+data = data.frame(y = df$V1, t = seq(1,length(df$V1))) 
+
+result = inla(formula = formula, family = "gaussian", data = data, quantiles = c(0.025, 0.5, 0.975), control.predictor = list(link=1))
+data.inla = data.frame(t = data$t, eta.mean = result$summary.random$t$mean, lin.pred.mean = result$summary.linear.predictor$mean, lower = result$summary.random$t$`0.025quant`, upper = result$summary.random$t$`0.975quant`)
+
+ggplot(data.inla) +
+  geom_line(aes(x = t, y = eta.mean, colour = "Mean of eta")) + 
+  geom_line(aes(x = t, y = lin.pred.mean, colour = "Mean of linear predictor")) + 
+  geom_line(aes(x = t, y = lower, colour = "Lower bound"), linetype =3) +
+  geom_line(aes(x = t, y = upper, colour = "Upper bound"), linetype =3) + 
+  geom_point(aes(x = t, y = df$V1, colour = "Data points")) + 
+  xlab('t') + ylab('y') + 
+  ggtitle('INLA analysis of the data') 
+```
