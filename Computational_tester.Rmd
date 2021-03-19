@@ -365,6 +365,7 @@ Q(\beta,\lambda_0,\lambda_1|t_1,\tilde\lambda_0,\tilde\lambda_1,\tilde\beta) &= 
 &\quad \cdot\frac{(\frac{1}{\beta}+t_2-t_1)^{y_1+2}}{\Gamma(y_1+2)} \lambda_0^{y_1+1}\exp\{-\lambda_1(\frac{1}{\beta}+t_2-t_1)\}.
 \end{aligned}
 $$
+
 Then the acceptance probability is 
 
 $$
@@ -656,6 +657,7 @@ L=\begin{pmatrix}
 \end{pmatrix}
 \end{aligned}
 $$
+
 which is a $T\times(T-2)$ lower triangular matrix. 
 
 The posterior distribution is
@@ -703,7 +705,7 @@ A_matrix = function(d) {
 ```
 
 
-```{r, fig.cap="\\label{hist} Histogram of the simulated data. To the left we see the histogram of the $\\theta$ samples and to the right we see the  $\\eta$ samples.",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{hist} Histogram of the simulated $\\theta$ samples.",fig.width=6, fig.height=4}
 #Making block Gibbs algorithm
 gibbs_block <- function(eta, n, iter){
   theta <- rep(1,iter)
@@ -733,12 +735,15 @@ samples<-gibbs_block(eta, n, iter)
 samples.theta = samples[1,]
 samples.eta = samples[-1,]
 
-par(mfrow = c(1, 2))
 truehist(samples.theta, xlab=expression(theta))
-truehist(samples.eta[10,], xlab=expression(eta))
 ```
 
-```{r, fig.cap="\\label{confint} 95% confidence interval.",fig.width=6, fig.height=4}
+We want to use our samples to get an estimate of the posterior marginal for the hyperparameter $\pi(\theta|y)$, so a histogram of the generated samples is displayed in Figure \ref{hist}.
+
+Further we will use the samples to get an estimate of the smooth effect using the mean and pointwise 95% confidence interval.
+
+
+```{r, fig.cap="\\label{confint} 95% confidence interval togehter with the true observations.",fig.width=6, fig.height=4}
 mean_values <- rep(0,n)
 var_values <- rep(0, n)
 upper <-rep(0,n)
@@ -758,8 +763,12 @@ ggplot()+
 
 ```
 
+In Figure \ref{confint} the mean of the samples are plotted together with the confidence interval. We see that the means follow the true observations.
+
 ## B3
+
 We want to approximate the posterior marginal for the hyperparameter $\theta$, which can be written as
+
 $$
 \begin{aligned}
 \pi(\theta|\bm{y}) &\propto \frac{\pi(\bm{y}|\bm{\eta},\theta)\pi(\bm{\eta}|\theta)\pi(\theta)}{\pi(\bm{\eta}|\theta,\bm{y})} \\
@@ -767,8 +776,10 @@ $$
 &=\theta^{(T-2)/2}\det(Q(\theta)+I)^{-1/2}\exp\{-\theta-\frac{1}{2}\bm{y}^T(I-(Q(\theta)+I)^{-1})\bm{y}\}.
 \end{aligned}
 $$
+
 In order to find an approximation, we use a grid of values for $\theta$ between $0$ and $6$, and calculates $\pi(\theta|\bm{y})$ for the values in the grid.
-```{r, fig.cap="\\label{confint} 95% confidence interval.",fig.width=6, fig.height=4}
+
+```{r, fig.cap="\\label{B3} Approxiamtion of $\\pi(\\theta|y)$ calculated with MCMC and numerical approximation.",fig.width=6, fig.height=4}
 pi_theta_given_y = function(theta_grid, y) {
   T = length(y)
   A = A_matrix(T)
@@ -788,11 +799,13 @@ y = pi_theta_given_y(theta, df$V1)
 y = y / (sum(y)*0.01)
 
 ggplot() + 
-  geom_density(aes(x=samples.theta, colour = "Noe"), fill="#FFCCCC")+
-  geom_line( aes(x=theta, y=y, colour = "Noe annet"))
-#truehist(samples.theta)
+  geom_density(aes(x=samples.theta, colour = "MCMC samples"), fill="#FFCCCC")+
+  geom_line( aes(x=theta, y=y, colour = "Num approx"))+
+  xlab(expression(theta))
+
 ```
 
+Figure \ref{B3} compares our results from the MCMC algorithm, the red line, together with our approximation on the grid, the blue line. We see that our densities match quite well.
 
 # B4 
 Next we want to look at an approximation of the marginal posterior for the smooth effect, which is
@@ -812,7 +825,7 @@ $$
 $$
 To calculate the approximation we use an additional grid, this one for $\eta$ and has values between $-2$ and $2$. 
 
-```{r, fig.cap="\\label{integral}....",fig.width=6, fig.height=4}
+```{r, fig.cap="\\label{marginal} Comparing the marginal posterior of the smooth effect of $\\pi(\\eta_{10}|y)$ calcualted from the samples and from the integral.",fig.width=6, fig.height=4}
 pi_eta_10_given_theta_y = function(eta_grid, theta, y) {
   A = A_matrix(length(y))
   I = diag(1, length(y))
@@ -839,31 +852,13 @@ pi = pi_eta_10_given_y(theta, eta, df$V1)
 pi = pi / (sum(pi)*0.01)
 
 ggplot() + 
-  geom_density(aes(x=samples.eta[10,], colour = "Noe"), fill="#FFCCCC") +
-  geom_line( aes(x=eta, y=pi, colour = "Noe annet"))
+  geom_density(aes(x=samples.eta[10,], colour = "Eta10 samples"), fill="#FFCCCC") +
+  geom_line( aes(x=eta, y=pi, colour = "Integral approx"))+
+  xlab(expression(eta))
 ```
 
+Figure \ref{marginal} show our approximation of the marginal posterior for the smooth effect calculated from the samples generated via Gibbs sampling together with the numerical approximation of the integral. We see that the approximations match very well.
 
-## B5
-```{r}
-#Loding the INLA package
-library(INLA)
-```
 
-We now want to compare our calculations to the results from the built in INLA library. 
-```{r}
-hyper = list(prec = list(prior = "loggamma", param = c(1,1)) )
-formula = y ~ f(t, model = "rw2", hyper = hyper, cyclic = FALSE, constr = FALSE) -1
-data = data.frame(y = df$V1, t = seq(1,length(df$V1)))
-
-result = inla(formula = formula, family = "gaussian", data = data, quantiles = c(0.025, 0.5, 0.975), control.predictor = list(link=1))
-df.inla = data.frame(t = data$t, eta.mean = result$summary.random$t$mean, linear.pred.mean = result$summary.linear.predictor$mean, lower = result$summary.random$t$`0.025quant`, upper = result$summary.random$t$`0.975quant`)
-
-ggplot(df.inla) + 
-  geom_line(aes(x = t, y = eta.mean)) + 
-  geom_line(aes(x = t, y = lower)) +
-  geom_line(aes(x = t, y = upper)) + 
-  geom_point(aes(x = t, y = df$V1))
-
-```
+`
 
