@@ -757,8 +757,17 @@ ggplot()+
   geom_point(aes(x=x, y=df$V1))
 
 ```
-## B3
 
+## B3
+We want to approximate the posterior marginal for the hyperparameter $\theta$, which can be written as
+$$
+\begin{aligned}
+\pi(\theta|\bm{y}) &\propto \frac{\pi(\bm{y}|\bm{\eta},\theta)\pi(\bm{\eta}|\theta)\pi(\theta)}{\pi(\bm{\eta}|\theta,\bm{y})} \\
+& \propto \frac{ \exp\{-\frac{1}{2}(\bm{y}-\bm{\eta})^T(\bm{y}-\bm{\eta})\} \cdot \theta^{(T-2)/2}\exp\{-\frac{1}{2}\bm{\eta}^TQ(\theta)\bm{\eta}\} \cdot \exp\{-\theta\} } { \det((Q(\theta)+I)^{-1})^{-1/2}\exp\{-\frac{1}{2}(\bm{\eta}-(Q(\theta)+I)^{-1}\bm{y})^T(Q(\theta)+I)(\bm{\eta}-(Q(\theta)+I)\} } \\
+&=\theta^{(T-2)/2}\det(Q(\theta)+I)^{-1/2}\exp\{-\theta-\frac{1}{2}\bm{y}^T(I-(Q(\theta)+I)^{-1})\bm{y}\}.
+\end{aligned}
+$$
+In order to find an approximation, we use a grid of values for $\theta$ between $0$ and $6$, and calculates $\pi(\theta|\bm{y})$ for the values in the grid.
 ```{r, fig.cap="\\label{confint} 95% confidence interval.",fig.width=6, fig.height=4}
 pi_theta_given_y = function(theta_grid, y) {
   T = length(y)
@@ -786,6 +795,23 @@ ggplot() +
 
 
 # B4 
+Next we want to look at an approximation of the marginal posterior for the smooth effect, which is
+$$
+\begin{aligned}
+\pi(\eta_i|\bm{y})&=\int\pi(\eta_i|\bm{y},\theta)\pi(\theta|\bm{y})d\theta \\
+&\approx \sum_{k=1}^N\pi(\eta_i|\theta_k,\bm{y})\pi(\theta_k|\bm{y})\Delta_\theta
+\end{aligned}
+$$
+where $\Delta_\theta=\theta_k-\theta_{k-1}$ is the constant step size between the values of $\theta$ in the grid.
+
+We know that $\pi(\bm{\eta}|\theta,\bm{y})\sim\mathcal{N}((Q(\theta)+I)^{-1}\bm{y}, (Q(\theta)+I)^{-1})$, and therefore we assume 
+$$
+\begin{aligned}
+\pi(\eta_i|\theta,\bm{y})\sim\mathcal{N}\big([(Q(\theta)+I)^{-1}\bm{y}]_i, [(Q(\theta)+I)^{-1}]_{ii}\big).
+\end{aligned}
+$$
+To calculate the approximation we use an additional grid, this one for $\eta$ and has values between $-2$ and $2$. 
+
 ```{r, fig.cap="\\label{integral}....",fig.width=6, fig.height=4}
 pi_eta_10_given_theta_y = function(eta_grid, theta, y) {
   A = A_matrix(length(y))
@@ -826,8 +852,18 @@ library(INLA)
 
 We now want to compare our calculations to the results from the built in INLA library. 
 ```{r}
-dat <- data.frame(y=df$V1, t=seq(1, length(df$V1), by=1))
-formula = y ~ f(t, model = "rw2", hyper = list(prec=list(prior="loggamma", param=c(1,1))),cyclic=F,constr=F)-1
-result = INLA::inla(formula = formula,data = dat,family = "gaussian",control.family = list(hyper=list(prec=list(initial=0, fixed=TRUE))),control.predictor = list(compute = TRUE, link = 1))               
+hyper = list(prec = list(prior = "loggamma", param = c(1,1)) )
+formula = y ~ f(t, model = "rw2", hyper = hyper, cyclic = FALSE, constr = FALSE) -1
+data = data.frame(y = df$V1, t = seq(1,length(df$V1)))
+
+result = inla(formula = formula, family = "gaussian", data = data, quantiles = c(0.025, 0.5, 0.975), control.predictor = list(link=1))
+df.inla = data.frame(t = data$t, eta.mean = result$summary.random$t$mean, linear.pred.mean = result$summary.linear.predictor$mean, lower = result$summary.random$t$`0.025quant`, upper = result$summary.random$t$`0.975quant`)
+
+ggplot(df.inla) + 
+  geom_line(aes(x = t, y = eta.mean)) + 
+  geom_line(aes(x = t, y = lower)) +
+  geom_line(aes(x = t, y = upper)) + 
+  geom_point(aes(x = t, y = df$V1))
+
 ```
 
